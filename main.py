@@ -6,7 +6,7 @@ class LibraryApp(tk.Tk):
   def __init__(self):
     super().__init__()
     self.title("Library System")
-    self.geometry("400x300+1200+100")
+    self.geometry("700x500+1000+100")
     self.create_widgets()
     
   def create_widgets(self):
@@ -71,7 +71,7 @@ class LibraryApp(tk.Tk):
           self.activity_id_label.config(text="Entry not found")
       
   def checkout_book(self):
-    
+
     # is book.status avaliable? 
     # => get request for the book.avaliability
     barcode = self.barcode_entry.get()
@@ -101,7 +101,12 @@ class LibraryApp(tk.Tk):
       else:
         self.status_label = tk.Label(self, text="Book is not avaliable")
         self.status_label.pack()
-    
+        
+    else:
+      self.get_book_label = tk.Label(self, text="Unable to get Book details")
+      self.get_book_label.pack()
+
+
         
   def checkout_activity(self):
     activity_data = {
@@ -123,6 +128,17 @@ class LibraryApp(tk.Tk):
     if activity_response.status_code == 201 and book_response.status_code == 200:
       print("Check Out Successful!")
       print("Book is now awaiting Return!")
+      self.confirm_checkout.destroy()
+      self.confirm_label = tk.Label(self, text="Check In Successful! Book is now avaliable for Check Out!")
+      self.confirm_label.pack()      
+      self.school_id_label.destroy()
+      self.school_id_entry.destroy()
+      self.check_entry.destroy()
+      self.activity_id_label.destroy()
+      self.status_label.destroy()
+      self.id_result_label.destroy()
+      
+      self.confirm_label.destroy()
     else:
       print("Error in checkout or book update") 
       print(activity_response.json())
@@ -130,7 +146,8 @@ class LibraryApp(tk.Tk):
 
 
 
-  def return_book(self):
+  def return_book(self): 
+    
     # is book.status unavaliable? 
     # => get request for the book.avaliability
     barcode = self.barcode_entry.get()
@@ -190,8 +207,19 @@ class LibraryApp(tk.Tk):
     book_response = requests.put(f'http://localhost:3000/api/v1/books/{self.book_id}', json=book_update_data)
         
     if activity_response.status_code == 200 and book_response.status_code == 200:
+      self.confirm_label = tk.Label(self, text="Check In Successful! Book is now avaliable for Check Out!")
+      self.confirm_label.pack()      
       print("Check In Successful!")
-      print("Book is now avaliable for Check Out!")
+      print("Book is now available for check out")
+      self.school_id_label.destroy()
+      self.school_id_entry.destroy()
+      self.check_entry.destroy()
+      self.activity_id_label.destroy()
+      self.status_label.destroy()
+      self.id_result_label.destroy()
+      self.confirm_return.destroy()
+      self.confirm_label.destroy()
+      
     else:
       print("Error in checkin or book update")   
 
