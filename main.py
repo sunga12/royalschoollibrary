@@ -1,11 +1,12 @@
 import tkinter as tk
+from tkinter import ttk
 import requests
 from datetime import datetime
 
 class LibraryApp(tk.Tk):
   def __init__(self):
     super().__init__()
-    self.title("Library System") 
+    self.title("Royal School Library System") 
     self.geometry("700x500+1000+100")
     self.create_widgets()
     
@@ -17,7 +18,7 @@ class LibraryApp(tk.Tk):
     self.barcode_label = tk.Label(self, text="Scan or Input a Book Barcode:")
     self.barcode_label.pack()
     
-    self.barcode_entry = tk.Entry(self)
+    self.barcode_entry = ttk.Entry(self)
     self. barcode_entry.config(width=50)
     self.barcode_entry.pack()
     self.barcode_entry.bind("<Return>", self.search_book)
@@ -25,15 +26,91 @@ class LibraryApp(tk.Tk):
     self.result_label = tk.Label(self, text="")
     self.result_label.pack()
     
-    self.checkout_button = tk.Button(self, text="Checkout Book", command=self.checkout_book)
-    self.checkout_button.config(width=20, height=5)
+    self.checkout_button = ttk.Button(self, text="Checkout Book", command=self.checkout_book)
+    self.checkout_button.config(width=20)
     self.checkout_button.pack(side="left", padx=20, pady=10, fill="x")
     
-    self.return_button = tk.Button(self, text="Return Book", command=self.return_book)
-    self.return_button.config(width=20, height=5)
+    self.return_button = ttk.Button(self, text="Return Book", command=self.return_book)
+    self.return_button.config(width=20)
     self.return_button.pack(side="right", padx=20, pady=10, fill="x")
     
+    self.addbook_button = ttk.Button(self, text="Add New Book", command=self.add_book)
+    self.addbook_button.config(width=20)
+    self.addbook_button.pack(side="bottom", padx=20, pady=30, fill="x")
     
+  def add_book(self):
+    
+    #Create new top level sub window
+    
+    addwindow = tk.Toplevel(self)
+    addwindow.title("Add New Book")
+    addwindow.geometry("600x600+1200+200")
+    
+    addwindow.transient(self)
+    addwindow.grab_set()
+    
+    self.new_book_widgets(addwindow)
+    
+  
+  def new_book_widgets(self, window):
+    self.book_instruction_title = ttk.Label(window, text="Insert the Details of the New Book")
+    self.book_instruction_title.config(font=("Arial", 20, "bold"))
+    self.book_instruction_title.pack(pady="40", padx="10", anchor="center")
+
+    self.new_barcode_label = ttk.Label(window, text="Scan or Input the Book Barcode:")
+    self.new_barcode_label.pack(pady="20", padx="10")
+    
+    self.new_barcode_entry = ttk.Entry(window)
+    self.new_barcode_entry.config(width=100)
+    self.new_barcode_entry.pack(pady="10", padx="20")
+    
+    self.new_title_label = ttk.Label(window, text="Book Title:")
+    self.new_title_label.pack(pady="20", padx="10")
+    
+    self.new_title_entry = ttk.Entry(window)
+    self.new_title_entry.config(width=100)
+    self.new_title_entry.pack(pady="10", padx="20")
+    
+    self.new_author_label = ttk.Label(window, text="Book Author:")
+    self.new_author_label.pack(pady="20", padx="10")
+    
+    self.new_author_entry = ttk.Entry(window)
+    self.new_author_entry.config(width=100)
+    self.new_author_entry.pack(pady="10", padx="20")
+    
+    self.postbook_button = ttk.Button(window, text="Add Book", command=lambda: self.post_book(window))
+    self.postbook_button.pack(side="bottom", padx=20, pady=30, fill="x")
+    
+    
+  def post_book(self, window):
+    book_data = {
+      'title': self.new_title_entry.get(),
+      'author': self.new_author_entry.get(),
+      'avaliability': "avaliable",
+      'barcode': self.new_barcode_entry.get()
+    }
+        
+    book_response = requests.post('http://localhost:3000/api/v1/books', json=book_data)    
+    
+    if book_response.status_code == 201:
+      self.new_book_response_label = ttk.Label(window, text=f"New Book Successfully Created: {book_data['title']}, by {book_data['author']}, barcode number: {book_data['barcode']}.", wraplength=300)
+      
+      self.new_book_response_label.pack(pady="20", padx="10")
+      
+      self.new_author_entry.delete(0, tk.END)
+      self.new_title_entry.delete(0, tk.END)
+      self.new_barcode_entry.delete(0, tk.END)
+
+
+      self.after(10000, self.new_book_response_label.destroy)
+
+    else:
+      self.new_book_response_label = ttk.Label(window, text="Failed To Add Book, Please Try again")
+      self.new_book_response_label.pack(pady="20", padx="10")
+      self.after(5000, self.new_book_response_label.destroy)
+
+
+  
   def search_book(self, event):
     barcode = self.barcode_entry.get()
     response = requests.get(f'http://localhost:3000/api/v1/books/barcode/{barcode}')
@@ -204,7 +281,7 @@ class LibraryApp(tk.Tk):
       self.after(1000, self.get_book_label.destroy)
         
         
-   
+  
   def checkin_activity(self):
     
     now =  datetime.now()
