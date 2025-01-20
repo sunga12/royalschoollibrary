@@ -5,15 +5,20 @@ from datetime import datetime
 class LibraryApp(tk.Tk):
   def __init__(self):
     super().__init__()
-    self.title("Library System")
+    self.title("Library System") 
     self.geometry("700x500+1000+100")
     self.create_widgets()
     
   def create_widgets(self):
-    self.barcode_label = tk.Label(self, text="Scan or Input Barcode:")
+    
+    self.welcome_label = tk.Label(self, text="Welcome to the Royal School Library")
+    self.welcome_label.config(font=("Arial", 24, "bold"))
+    self.welcome_label.pack(pady="40", padx="10", anchor="center")
+    self.barcode_label = tk.Label(self, text="Scan or Input a Book Barcode:")
     self.barcode_label.pack()
     
     self.barcode_entry = tk.Entry(self)
+    self. barcode_entry.config(width=50)
     self.barcode_entry.pack()
     self.barcode_entry.bind("<Return>", self.search_book)
     
@@ -21,10 +26,12 @@ class LibraryApp(tk.Tk):
     self.result_label.pack()
     
     self.checkout_button = tk.Button(self, text="Checkout Book", command=self.checkout_book)
-    self.checkout_button.pack()
+    self.checkout_button.config(width=20, height=5)
+    self.checkout_button.pack(side="left", padx=20, pady=10, fill="x")
     
     self.return_button = tk.Button(self, text="Return Book", command=self.return_book)
-    self.return_button.pack()
+    self.return_button.config(width=20, height=5)
+    self.return_button.pack(side="right", padx=20, pady=10, fill="x")
     
     
   def search_book(self, event):
@@ -99,12 +106,14 @@ class LibraryApp(tk.Tk):
         self.confirm_checkout.pack()
         
       else:
-        self.status_label = tk.Label(self, text="Book is not avaliable")
+        self.status_label = tk.Label(self, text="Book is not avaliable for Checkout")
         self.status_label.pack()
+        self.after(4000, self.status_label.destroy)
         
     else:
       self.get_book_label = tk.Label(self, text="Unable to get Book details")
       self.get_book_label.pack()
+      self.after(1000, self.get_book_label.destroy)
 
 
         
@@ -129,16 +138,21 @@ class LibraryApp(tk.Tk):
       print("Check Out Successful!")
       print("Book is now awaiting Return!")
       self.confirm_checkout.destroy()
-      self.confirm_label = tk.Label(self, text="Check In Successful! Book is now avaliable for Check Out!")
+      self.confirm_label = tk.Label(self, text="Check Out Successful! Book is now awaiting Return!")
       self.confirm_label.pack()      
       self.school_id_label.destroy()
       self.school_id_entry.destroy()
-      self.check_entry.destroy()
-      self.activity_id_label.destroy()
-      self.status_label.destroy()
       self.id_result_label.destroy()
-      
-      self.confirm_label.destroy()
+      self.result_label.destroy()
+      self.result_label = tk.Label(self, text="")
+      self.result_label.pack()
+          
+      if self.status_label:
+        self.status_label.destroy()
+        
+      self.id_result_label.destroy()
+      self.barcode_entry.delete(0, tk.END)
+      self.after(3000, self.confirm_label.destroy)
     else:
       print("Error in checkout or book update") 
       print(activity_response.json())
@@ -183,6 +197,11 @@ class LibraryApp(tk.Tk):
       else:
         self.status_label = tk.Label(self, text="Book is already returned.")
         self.status_label.pack()
+        self.after(3000, self.status_label.destroy) 
+    else:
+      self.get_book_label = tk.Label(self, text="Unable to get Book details")
+      self.get_book_label.pack()
+      self.after(1000, self.get_book_label.destroy)
         
         
    
@@ -213,12 +232,16 @@ class LibraryApp(tk.Tk):
       print("Book is now available for check out")
       self.school_id_label.destroy()
       self.school_id_entry.destroy()
+      self.id_result_label.destroy()
       self.check_entry.destroy()
       self.activity_id_label.destroy()
       self.status_label.destroy()
-      self.id_result_label.destroy()
+      self.result_label.destroy()
+      self.result_label = tk.Label(self, text="")
+      self.result_label.pack()
       self.confirm_return.destroy()
-      self.confirm_label.destroy()
+      self.barcode_entry.delete(0, tk.END)
+      self.after(3000, self.confirm_label.destroy)
       
     else:
       print("Error in checkin or book update")   
