@@ -1,6 +1,10 @@
 from flask import request, jsonify
 from app import app, db
+from datetime import datetime
 from models import Book, User, Activity
+
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 @app.route('/api/v1/books', methods=['GET'])
 def get_books():
@@ -18,8 +22,9 @@ def get_books():
 @app.route('/api/v1/books', methods=['POST'])
 def add_book():
   data = request.json
-  if not data or 'title' not in data or 'author' not in data or 'barcode' not in data:
-    return jsonify({'error': 'Missing required fields'}), 400
+  if not data.get('title') or not data.get('author') or not data.get('barcode'):
+    return jsonify({'error': 'Title, author, and barcode are required fields'}), 400
+    
   new_book = Book(
     title=data['title'],
     author=data['author'],
@@ -62,8 +67,9 @@ def delete_book(id):
   return jsonify({'message': 'Book Deleted Successfully!'})
 
 
-@app.route('/api/v1/books/<string:barcode>', methods=['GET'])
+@app.route('/api/v1/books/barcode/<string:barcode>', methods=['GET'])
 def show_by_barcode(barcode):
+  # app.logger.debug(f"Received barcode: {barcode}")
   book = Book.query.filter_by(barcode=barcode).first()
   if book:
     return jsonify({
@@ -171,8 +177,14 @@ def get_activities():
 def add_activity():
   data = request.json
   if not data or 'user_id' not in data or 'book_id' not in data or 'checkout' not in data or 'status' not in data:
-        return jsonify({'error': 'Missing required fields'}), 400
+    return jsonify({'error': 'Missing required fields'}), 400
       
+  try:
+    # Convert checkout into a datetime object
+    data['checkout'] = datetime.fromisoformat(data['checkout'])
+  except ValueError:
+    return jsonify({'error': 'Invalid datetime format for checkout'}), 400
+  
   new_activity = Activity(
     user_id=data['user_id'],
     book_id=data['book_id'],
@@ -184,13 +196,23 @@ def add_activity():
   return jsonify({'message': 'Entry Created Successfully!'}), 201
 
 
-@app.route('/api/v1/activities/<int:id>', methods=['POST'])
+@app.route('/api/v1/activities/<int:id>', methods=['PUT'])
 def update_activity(id):
   activity = Activity.query.get_or_404(id)
   data = request.json
-  activity.checkin = data.get('checkin', activity.checkin)
+  
+  if 'checkin' not in data:
+    return jsonify({'error': 'Missing Checkin field'}), 400 # Bad request
+  
+  try:
+    # Convert checkout into a datetime object
+    checkin_datetime = datetime.fromisoformat(data['checkin'])
+  except ValueError:
+    return jsonify({'error': 'Invalid datetime format for checkout'}), 400
+  
+  activity.checkin = checkin_datetime # Access attirbute via dot notation now
   db.session.commit()
-  return jsonify({'message': 'Entry updated successfully!'})
+  return jsonify({'message': 'Entry updated successfully!'}), 200 # OK
 
   
 @app.route('/api/v1/activities/<int:id>', methods=['DELETE'])
@@ -201,7 +223,7 @@ def delete_activity(id):
   return jsonify({'message': 'Entry Deleted Successfully!'})
 
 
-@app.route('/api/v1/activities', methods=['GET'])
+@app.route('/api/v1/activities/ids', methods=['GET'])
 def show_by_user_book_id():
   user_id = request.args.get('user_id')
   book_id = request.args.get('book_id')

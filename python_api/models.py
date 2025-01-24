@@ -26,5 +26,5 @@ class Activity(db.Model):
   book_id = db.Column(db.Integer, db.ForeignKey('book.id'), nullable=False)
   user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
   checkout = db.Column(db.DateTime, nullable=False)
-  checkin = db.Column(db.DateTime, nullable=True) #Nullable if not yet return to library
+  checkin = db.Column(db.DateTime, nullable=True) #Nullable if not yet returned to library
   status = db.Column(db.String(20), nullable=False)

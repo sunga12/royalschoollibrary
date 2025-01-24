@@ -9,6 +9,7 @@ class LibraryApp(tk.Tk):
     self.title("Royal School Library System") 
     self.geometry("700x500+1000+100")
     self.create_widgets()
+    self.status_label = None
     
   def create_widgets(self):
     
@@ -34,10 +35,87 @@ class LibraryApp(tk.Tk):
     self.return_button.config(width=20)
     self.return_button.pack(side="right", padx=20, pady=10, fill="x")
     
+    self.createuser_button = ttk.Button(self, text="Create New User", command=self.create_user)
+    self.createuser_button.config(width=20)
+    self.createuser_button.pack(side="bottom", padx=20, pady=30, fill="x")
+    
     self.addbook_button = ttk.Button(self, text="Add New Book", command=self.add_book)
     self.addbook_button.config(width=20)
     self.addbook_button.pack(side="bottom", padx=20, pady=30, fill="x")
     
+  def create_user(self):
+    
+    addwindow = tk.Toplevel(self)
+    addwindow.title("Create New User")
+    addwindow.geometry("600x600+1200+200")
+    
+    addwindow.transient(self)
+    addwindow.grab_set()
+    
+    self.new_user_widgets(addwindow)
+    
+  def new_user_widgets(self, window):
+    self.user_instruction_title = ttk.Label(window, text="Insert the Details of the New User")
+    self.user_instruction_title.config(font=("Arial", 20, "bold"))
+    self.user_instruction_title.pack(pady="40", padx="10", anchor="center")
+
+    self.new_name_label = ttk.Label(window, text="Full Name:")
+    self.new_name_label.pack(pady="20", padx="10")
+    
+    self.new_name_entry = ttk.Entry(window)
+    self.new_name_entry.config(width=100)
+    self.new_name_entry.pack(pady="10", padx="20")
+    
+    self.new_role_label = ttk.Label(window, text="Role:")
+    self.new_role_label.pack(pady="20", padx="10")
+    
+    self.new_role_entry = ttk.Entry(window)
+    self.new_role_entry.config(width=100)
+    self.new_role_entry.pack(pady="10", padx="20")
+    
+    self.new_school_id_label = ttk.Label(window, text="School ID:")
+    self.new_school_id_label.pack(pady="20", padx="10")
+    
+    self.new_school_id_entry = ttk.Entry(window)
+    self.new_school_id_entry.config(width=100)
+    self.new_school_id_entry.pack(pady="10", padx="20")
+    
+    self.new_email_label = ttk.Label(window, text="Email Address: (Optional)")
+    self.new_email_label.pack(pady="20", padx="10")
+    
+    self.new_email_entry = ttk.Entry(window)
+    self.new_email_entry.config(width=100)
+    self.new_email_entry.pack(pady="10", padx="20")
+    
+    self.postuser_button = ttk.Button(window, text="Create User", command=lambda: self.post_user(window))
+    self.postuser_button.pack(side="bottom", padx=20, pady=30, fill="x")
+    
+  def post_user(self, window):
+    user_data = {
+      'name': self.new_name_entry.get(),
+      'role': self.new_role_entry.get(),
+      'school_id': self.new_school_id_entry.get(),
+      'email': self.new_email_entry.get()
+    }
+        
+    user_response = requests.post('http://localhost:5000/api/v1/users', json=user_data)    
+    
+    if user_response.status_code == 201:
+      self.new_user_response_label = ttk.Label(window, text=f"New User Successfully Created: {user_data['role']}: {user_data['name']}, School ID number: {user_data['school_id']}.", wraplength=300)
+      self.new_user_response_label.pack(pady="20", padx="10")
+      
+      self.new_name_entry.delete(0, tk.END)
+      self.new_role_entry.delete(0, tk.END)
+      self.new_school_id_entry.delete(0, tk.END)
+      self.new_email_entry.delete(0, tk.END)
+
+      self.after(10000, self.new_user_response_label.destroy)
+
+    else:
+      self.new_user_response_label = ttk.Label(window, text="Failed To Create User, Please Try again")
+      self.new_user_response_label.pack(pady="20", padx="10")
+      self.after(5000, self.new_user_response_label.destroy)
+  
   def add_book(self):
     
     #Create new top level sub window
@@ -86,11 +164,11 @@ class LibraryApp(tk.Tk):
     book_data = {
       'title': self.new_title_entry.get(),
       'author': self.new_author_entry.get(),
-      'avaliability': "avaliable",
+      'availability': "available",
       'barcode': self.new_barcode_entry.get()
     }
         
-    book_response = requests.post('http://localhost:3000/api/v1/books', json=book_data)    
+    book_response = requests.post('http://localhost:5000/api/v1/books', json=book_data)    
     
     if book_response.status_code == 201:
       self.new_book_response_label = ttk.Label(window, text=f"New Book Successfully Created: {book_data['title']}, by {book_data['author']}, barcode number: {book_data['barcode']}.", wraplength=300)
@@ -113,16 +191,17 @@ class LibraryApp(tk.Tk):
   
   def search_book(self, event):
     barcode = self.barcode_entry.get()
-    response = requests.get(f'http://localhost:3000/api/v1/books/barcode/{barcode}')
+    response = requests.get(f'http://localhost:5000/api/v1/books/barcode/{barcode}')
+    print(f"barcode: {barcode}, then the response {response}")
     if response.status_code == 200:
       book = response.json()
       self.result_label.config(text=f"Book: {book['title']} by {book['author']}")
     else:
-      self.result_label.config(text="Book not found")
+      self.result_label.config(text=f"Book not found, Error: {response.status_code}")
 
   def search_user(self, event): 
     school_id = self.school_id_entry.get()
-    response = requests.get(f'http://localhost:3000/api/v1/users/school_id/{school_id}')
+    response = requests.get(f'http://localhost:5000/api/v1/users/{school_id}')
     
     if response.status_code == 200:
     # yes: 
@@ -143,7 +222,7 @@ class LibraryApp(tk.Tk):
       book_id = self.book_id
       user_id = self.user_id
       
-      response = requests.get(f'http://localhost:3000/api/v1/activities/ids/{book_id}/{user_id}')
+      response = requests.get(f'http://localhost:5000/api/v1/activities/ids', params={'user_id': user_id, 'book_id': book_id})
       
       if response.status_code == 200:
           activity = response.json()
@@ -159,14 +238,14 @@ class LibraryApp(tk.Tk):
     # is book.status avaliable? 
     # => get request for the book.avaliability
     barcode = self.barcode_entry.get()
-    response = requests.get(f'http://localhost:3000/api/v1/books/barcode/{barcode}')
+    response = requests.get(f'http://localhost:5000/api/v1/books/barcode/{barcode}')
     if response.status_code == 200:
 
       book = response.json()
       self.book_id = book['id']
       
-      if book['avaliability'] == 'avaliable':
-        
+      if book['availability'] == 'available':
+
         self.status = 'Checked Out'
         
         self.school_id_label = tk.Label(self, text="Enter the School ID number")
@@ -183,7 +262,7 @@ class LibraryApp(tk.Tk):
         self.confirm_checkout.pack()
         
       else:
-        self.status_label = tk.Label(self, text="Book is not avaliable for Checkout")
+        self.status_label = tk.Label(self, text="Book is not available for Checkout")
         self.status_label.pack()
         self.after(4000, self.status_label.destroy)
         
@@ -195,60 +274,71 @@ class LibraryApp(tk.Tk):
 
         
   def checkout_activity(self):
+    
+    # now =  datetime.now()
+    
+    # checkout = db.Column(db.DateTime, nullable=False)
+
     activity_data = {
       'user_id': self.user_id,
       'book_id': self.book_id,
+      'checkout': datetime.now().isoformat(),
       'status': self.status
     }
     
     print(activity_data)
     
-    activity_response = requests.post('http://localhost:3000/api/v1/activities', json=activity_data)
+    activity_response = requests.post('http://localhost:5000/api/v1/activities', json=activity_data)
     
-    book_update_data = {
-      'avaliability': 'Checked Out'
-    }
-    
-    book_response = requests.put(f'http://localhost:3000/api/v1/books/{self.book_id}', json=book_update_data)
-        
-    if activity_response.status_code == 201 and book_response.status_code == 200:
-      print("Check Out Successful!")
-      print("Book is now awaiting Return!")
-      self.confirm_checkout.destroy()
-      self.confirm_label = tk.Label(self, text="Check Out Successful! Book is now awaiting Return!")
-      self.confirm_label.pack()      
-      self.school_id_label.destroy()
-      self.school_id_entry.destroy()
-      self.id_result_label.destroy()
-      self.result_label.destroy()
-      self.result_label = tk.Label(self, text="")
-      self.result_label.pack()
+    if activity_response.status_code == 201:
+
+      book_update_data = {
+        'availability': 'Checked Out'
+      }
+
+      book_response = requests.put(f'http://localhost:5000/api/v1/books/{self.book_id}', json=book_update_data)
+      
+      if book_response.status_code == 200:
+        print("Check Out Successful!")
+        print("Book is now awaiting Return!")
+        self.confirm_checkout.destroy()
+        self.confirm_label = tk.Label(self, text="Check Out Successful! Book is now awaiting Return!")
+        self.confirm_label.pack()      
+        self.school_id_label.destroy()
+        self.school_id_entry.destroy()
+        self.id_result_label.destroy()
+        self.result_label.destroy()
+        self.result_label = tk.Label(self, text="")
+        self.result_label.pack()
+            
+        if self.status_label:
+          self.status_label.destroy()
+          self.status_label = None
           
-      if self.status_label:
-        self.status_label.destroy()
-        
-      self.id_result_label.destroy()
-      self.barcode_entry.delete(0, tk.END)
-      self.after(3000, self.confirm_label.destroy)
+        self.id_result_label.destroy()
+        self.barcode_entry.delete(0, tk.END)
+        self.after(3000, self.confirm_label.destroy)
+      else:
+        print("Error in book update") 
+        print(book_response) 
+      
     else:
-      print("Error in checkout or book update") 
-      print(activity_response.json())
-      print(book_response.json()) 
-
-
+      print("Error in checkout")
+      print(activity_response)
+      
 
   def return_book(self): 
     
     # is book.status unavaliable? 
     # => get request for the book.avaliability
     barcode = self.barcode_entry.get()
-    response = requests.get(f'http://localhost:3000/api/v1/books/barcode/{barcode}')
+    response = requests.get(f'http://localhost:5000/api/v1/books/barcode/{barcode}')
     if response.status_code == 200:
 
       book = response.json()
       self.book_id = book['id']
       
-      if book['avaliability'] == 'Checked Out':
+      if book['availability'] == 'Checked Out':
         
         self.status = 'Checked In'
       
@@ -283,45 +373,49 @@ class LibraryApp(tk.Tk):
         
   
   def checkin_activity(self):
-    
-    now =  datetime.now()
-    
+        
     update_data = {
       'user_id': self.user_id,
       'book_id': self.book_id,
       'status': self.status,
-      'checkin': now.strftime("%Y-%m-%dT%H:%M:%S")
+      'checkin': datetime.now().isoformat()
     }
     
     print(update_data)
-    activity_response = requests.put(f'http://localhost:3000/api/v1/activities/{self.activity_id}', json=update_data)
+    activity_response = requests.put(f'http://localhost:5000/api/v1/activities/{self.activity_id}', json=update_data)
     
-    book_update_data = {
-      'avaliability': 'avaliable'
-    }
+    if activity_response.status_code == 200:
+      book_update_data = {
+        'availability': 'available'
+      }
     
-    book_response = requests.put(f'http://localhost:3000/api/v1/books/{self.book_id}', json=book_update_data)
+      book_response = requests.put(f'http://localhost:5000/api/v1/books/{self.book_id}', json=book_update_data)
         
-    if activity_response.status_code == 200 and book_response.status_code == 200:
-      self.confirm_label = tk.Label(self, text="Check In Successful! Book is now avaliable for Check Out!")
-      self.confirm_label.pack()      
-      print("Check In Successful!")
-      print("Book is now available for check out")
-      self.school_id_label.destroy()
-      self.school_id_entry.destroy()
-      self.id_result_label.destroy()
-      self.check_entry.destroy()
-      self.activity_id_label.destroy()
-      self.status_label.destroy()
-      self.result_label.destroy()
-      self.result_label = tk.Label(self, text="")
-      self.result_label.pack()
-      self.confirm_return.destroy()
-      self.barcode_entry.delete(0, tk.END)
-      self.after(3000, self.confirm_label.destroy)
-      
-    else:
-      print("Error in checkin or book update")   
+      if book_response.status_code == 200:
+        self.confirm_label = tk.Label(self, text="Check In Successful! Book is now available for Check Out!")
+        self.confirm_label.pack()      
+        print("Check In Successful!")
+        print("Book is now available for check out")
+        self.school_id_label.destroy()
+        self.school_id_entry.destroy()
+        self.id_result_label.destroy()
+        self.check_entry.destroy()
+        self.activity_id_label.destroy()
+        
+        if self.status_label:
+          self.status_label.destroy()
+          
+        self.result_label.destroy()
+        self.result_label = tk.Label(self, text="")
+        self.result_label.pack()
+        self.confirm_return.destroy()
+        self.barcode_entry.delete(0, tk.END)
+        self.after(3000, self.confirm_label.destroy)
+        
+      else:
+        print("Error in book update")  
+    else: 
+      print("Error in checkin")
 
         
   
